@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "maibot-suno-audio-plugin"
-version = "0.1.2"
+version = "0.1.3"
 description = "基于 API Mart Suno 的 MaiBot 智能音乐、歌词与音效生成插件"
 requires-python = ">=3.12"
 dependencies = [

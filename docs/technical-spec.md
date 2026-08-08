@@ -543,6 +543,10 @@ stateDiagram-v2
     submitting --> submit_unknown: "提交超时或连接中断"
     submitting --> failed: "供应商明确拒绝"
     submitted --> pending
+    submitted --> processing
+    processing --> processing
+    processing --> completed
+    processing --> failed
     pending --> completed
     pending --> failed
     pending --> tracking_timeout
@@ -601,7 +605,7 @@ stateDiagram-v2
 | `vendor_task_id` | TEXT UNIQUE NULL | API Mart 任务 ID |
 | `operation` | TEXT | music、lyrics、sound、inspo、extend 等 |
 | `status` | TEXT | 本地状态机状态 |
-| `vendor_status` | TEXT | submitted、pending、completed、failed |
+| `vendor_status` | TEXT | submitted、pending、processing、completed、failed |
 | `progress` | INTEGER | 供应商进度 |
 | `platform` | TEXT | 平台 |
 | `stream_id` | TEXT | 实际聊天流 ID |
@@ -854,11 +858,11 @@ P0 建议公开以下 API，全部为非阻塞语义：
 
 ### 16.2 异步与恢复测试
 
-- `submitted → pending → completed → delivered`。
+- `submitted → pending/processing → completed → delivered`。
 - 多次查询网络错误后恢复。
 - POST 超时进入 `submit_unknown`，且不自动重提。
 - 轮询达到总超时后进入 `tracking_timeout`。
-- 插件重启后恢复 `submitted` 和 `pending`。
+- 插件重启后恢复本地状态为 `submitted` 和 `pending` 的任务，其中供应商原始状态可能是 `processing`。
 - `on_unload` 不把供应商任务误标为失败。
 
 ### 16.3 集成测试

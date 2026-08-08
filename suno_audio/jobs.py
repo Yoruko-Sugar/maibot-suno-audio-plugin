@@ -9,6 +9,7 @@ import time
 from .apimart_client import ApiMartClient
 from .delivery import DeliveryService
 from .errors import ApiMartProtocolError, ApiMartRateLimitError, ApiMartServerError
+from .models import VENDOR_IN_PROGRESS_STATUSES
 from .storage import AudioRepository
 
 
@@ -57,7 +58,9 @@ class AudioJobManager:
         if job is None or not job.get("vendor_task_id"):
             raise ValueError("任务没有可查询的供应商 task_id")
         snapshot = await self.client.get_task(str(job["vendor_task_id"]))
-        await self._handle_snapshot(job, snapshot)
+        finished = await self._handle_snapshot(job, snapshot)
+        if not finished:
+            self.schedule(str(job["id"]))
 
     async def shutdown(self) -> None:
         """取消本地协程，不改写供应商任务状态。"""
@@ -158,7 +161,7 @@ class AudioJobManager:
 
     async def _handle_snapshot(self, job: Dict[str, Any], snapshot: Any) -> bool:
         job_id = str(job["id"])
-        if snapshot.status in {"submitted", "pending"}:
+        if snapshot.status in VENDOR_IN_PROGRESS_STATUSES:
             self.repository.update_snapshot(job_id, snapshot)
             return False
         if snapshot.status == "failed":

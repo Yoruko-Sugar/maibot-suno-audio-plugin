@@ -14,6 +14,8 @@ MUSIC_VERSIONS = {"v3.5", "v4", "v4.5", "v4.5+", "v4.5-all", "v5", "v5.5"}
 SOUND_VERSIONS = {"v5", "v5.5"}
 SOUND_TYPES = {"one-shot", "loop"}
 VOCAL_GENDERS = {"", "Male", "Female"}
+VENDOR_IN_PROGRESS_STATUSES = {"submitted", "pending", "processing"}
+VENDOR_TASK_STATUSES = VENDOR_IN_PROGRESS_STATUSES | {"completed", "failed"}
 KEY_PATTERN = re.compile(r"^(?:C|C#|D|D#|E|F|F#|G|G#|A|A#|B)m?$")
 
 

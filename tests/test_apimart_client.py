@@ -76,3 +76,27 @@ async def test_submit_timeout_is_not_retried() -> None:
 
     assert calls == 1
     await http_client.aclose()
+
+
+@pytest.mark.asyncio
+async def test_processing_is_a_valid_in_progress_status() -> None:
+    async def handler(request: httpx.Request) -> httpx.Response:
+        del request
+        return httpx.Response(
+            200,
+            json={
+                "task_id": "task-processing",
+                "status": "processing",
+                "progress": 10,
+                "data": {},
+            },
+        )
+
+    http_client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    client = ApiMartClient(base_url="https://api.example", api_key="secret", client=http_client)
+
+    snapshot = await client.get_task("task-processing")
+
+    assert snapshot.status == "processing"
+    assert snapshot.progress == 10
+    await http_client.aclose()

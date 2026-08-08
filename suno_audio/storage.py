@@ -10,7 +10,7 @@ import json
 import sqlite3
 import uuid
 
-from .models import AudioTrack, GenerationRequest, VendorTaskSnapshot
+from .models import AudioTrack, GenerationRequest, VENDOR_IN_PROGRESS_STATUSES, VendorTaskSnapshot
 
 
 ACTIVE_STATUSES = {"queued", "submitting", "submitted", "pending", "delivering"}
@@ -211,7 +211,7 @@ class AudioRepository:
         )
 
     def update_snapshot(self, job_id: str, snapshot: VendorTaskSnapshot) -> None:
-        local_status = "pending" if snapshot.status in {"submitted", "pending"} else snapshot.status
+        local_status = "pending" if snapshot.status in VENDOR_IN_PROGRESS_STATUSES else snapshot.status
         now = utc_now()
         self._execute_update(
             """
@@ -380,6 +380,11 @@ class AudioRepository:
                 SELECT * FROM audio_jobs
                 WHERE status IN ('submitted', 'pending', 'delivering')
                    OR (status = 'completed' AND delivery_status IN ('pending', 'delivering'))
+                   OR (
+                       status = 'tracking_error'
+                       AND error_type = 'protocol_error'
+                       AND error_message = '未知供应商任务状态：processing'
+                   )
                 ORDER BY created_at
                 """
             ).fetchall()

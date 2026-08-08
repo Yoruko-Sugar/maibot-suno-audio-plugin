@@ -18,7 +18,7 @@ from .errors import (
     ApiMartServerError,
     ApiMartSubmitUnknownError,
 )
-from .models import AudioOperation, AudioTrack, GenerationRequest, VendorTaskSnapshot
+from .models import AudioOperation, AudioTrack, GenerationRequest, VENDOR_TASK_STATUSES, VendorTaskSnapshot
 
 
 ENDPOINTS = {
@@ -87,7 +87,7 @@ class ApiMartClient:
         payload = await self._request_json("GET", f"/v1/music/tasks/{normalized_task_id}")
         task_data = self._unwrap_task_payload(payload)
         status = str(task_data.get("status") or "").strip().lower()
-        if status not in {"submitted", "pending", "completed", "failed"}:
+        if status not in VENDOR_TASK_STATUSES:
             raise ApiMartProtocolError(f"未知供应商任务状态：{status or '<空>'}", error_type="protocol_error")
         task_id_value = str(task_data.get("task_id") or normalized_task_id).strip()
         progress_value = task_data.get("progress", 0)
