@@ -1,6 +1,6 @@
 {
   "manifest_version": 2,
-  "version": "0.1.5",
+  "version": "0.1.6",
   "name": "Suno 音频工坊",
   "description": "基于 API Mart Suno 的智能音乐、歌词与音效生成插件，支持自然语言触发、提示词优化、异步任务恢复和结果重发。",
   "author": {
