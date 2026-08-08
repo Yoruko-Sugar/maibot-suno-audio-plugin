@@ -98,11 +98,12 @@ class ApiMartClient:
 
         nested_data = task_data.get("data")
         nested = nested_data if isinstance(nested_data, dict) else {}
-        error_data = nested.get("error")
+        result_container = nested if "result" in nested or "error" in nested else task_data
+        error_data = result_container.get("error")
         error_message = ""
         if isinstance(error_data, dict):
             error_message = str(error_data.get("message") or "").strip()
-        result_data = nested.get("result")
+        result_data = result_container.get("result")
         result = result_data if isinstance(result_data, dict) else {}
         tracks = self._parse_tracks(result)
         lyrics_text = self._parse_lyrics(result, tracks)
@@ -114,7 +115,27 @@ class ApiMartClient:
             lyrics_text=lyrics_text,
             error_message=error_message,
             raw_result=result,
+            response_shape=self._describe_response_shape(task_data),
         )
+
+    @staticmethod
+    def _describe_response_shape(task_data: Dict[str, Any]) -> str:
+        """仅记录响应字段结构，不把 URL、歌词或其他结果内容写入日志。"""
+
+        task_keys = sorted(str(key) for key in task_data)
+        data_value = task_data.get("data")
+        data_keys = sorted(str(key) for key in data_value) if isinstance(data_value, dict) else []
+        if isinstance(data_value, dict) and "result" in data_value:
+            result_value = data_value.get("result")
+        else:
+            result_value = task_data.get("result")
+        if isinstance(result_value, dict):
+            result_shape = f"object:{sorted(str(key) for key in result_value)}"
+        elif isinstance(result_value, list):
+            result_shape = f"array:length={len(result_value)}"
+        else:
+            result_shape = type(result_value).__name__
+        return f"task={task_keys}; data={data_keys}; result={result_shape}"
 
     async def download(self, url: str, *, max_bytes: int, timeout_seconds: float = 120) -> tuple[bytes, str]:
         """下载受大小限制的音频或封面。"""

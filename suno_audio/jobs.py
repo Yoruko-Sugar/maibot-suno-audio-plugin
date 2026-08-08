@@ -95,6 +95,7 @@ class AudioJobManager:
             )
             started = time.monotonic()
             poll_errors = 0
+            completed_without_result_at: float | None = None
             last_state = (str(job.get("vendor_status") or ""), int(job.get("progress") or 0))
             while time.monotonic() - started < int(self.plugin.config.apimart.generation_timeout_seconds):
                 try:
@@ -109,6 +110,21 @@ class AudioJobManager:
                             snapshot.progress,
                         )
                         last_state = current_state
+                    if snapshot.status == "completed" and not self._has_required_result(job, snapshot):
+                        if completed_without_result_at is None:
+                            completed_without_result_at = time.monotonic()
+                            self.plugin.ctx.logger.warning(
+                                "音频任务已完成但结果尚未同步，继续等待：job=%s shape=%s",
+                                job["short_id"],
+                                snapshot.response_shape,
+                            )
+                        grace_seconds = int(self.plugin.config.apimart.completed_result_grace_seconds)
+                        if time.monotonic() - completed_without_result_at >= grace_seconds:
+                            await self._mark_result_unavailable(job, snapshot)
+                            return
+                        await asyncio.sleep(int(self.plugin.config.apimart.poll_interval_seconds))
+                        continue
+                    completed_without_result_at = None
                     finished = await self._handle_snapshot(job, snapshot)
                     if finished:
                         return
@@ -177,11 +193,13 @@ class AudioJobManager:
             )
             return True
         if snapshot.status == "completed":
-            if str(job["operation"]) == "lyrics":
-                if not snapshot.lyrics_text:
-                    raise ApiMartProtocolError("歌词任务完成但结果中没有歌词文本", error_type="protocol_error")
-            elif not snapshot.tracks:
-                raise ApiMartProtocolError("音频任务完成但结果中没有 music[]", error_type="protocol_error")
+            if not self._has_required_result(job, snapshot):
+                self.plugin.ctx.logger.warning(
+                    "音频任务已完成但结果尚未同步：job=%s shape=%s",
+                    job["short_id"],
+                    snapshot.response_shape,
+                )
+                return False
             self.repository.complete_job(job_id, snapshot)
             self.plugin.ctx.logger.info("音频任务结果已保存：job=%s tracks=%s", job["short_id"], len(snapshot.tracks))
             try:
@@ -200,6 +218,30 @@ class AudioJobManager:
                 )
             return True
         raise ApiMartProtocolError(f"无法处理供应商状态：{snapshot.status}", error_type="protocol_error")
+
+    @staticmethod
+    def _has_required_result(job: Dict[str, Any], snapshot: Any) -> bool:
+        if str(job["operation"]) == "lyrics":
+            return bool(snapshot.lyrics_text)
+        return bool(snapshot.tracks)
+
+    async def _mark_result_unavailable(self, job: Dict[str, Any], snapshot: Any) -> None:
+        message = "供应商任务已完成，但结果在宽限时间内仍未同步"
+        self.repository.mark_failed(
+            str(job["id"]),
+            status="tracking_error",
+            error_type="result_not_ready",
+            error_message=message,
+        )
+        self.plugin.ctx.logger.error(
+            "音频任务完成结果等待超时：job=%s shape=%s",
+            job["short_id"],
+            snapshot.response_shape,
+        )
+        await self.plugin.ctx.send.text(
+            f"⚠️ 音频任务 {job['short_id']} 已生成，但结果暂未同步。\n稍后可使用：/声音 状态 {job['short_id']}",
+            str(job["stream_id"]),
+        )
 
     async def _mark_tracking_timeout(self, job: Dict[str, Any], message: str) -> None:
         job_id = str(job["id"])

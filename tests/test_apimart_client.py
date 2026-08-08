@@ -99,4 +99,41 @@ async def test_processing_is_a_valid_in_progress_status() -> None:
 
     assert snapshot.status == "processing"
     assert snapshot.progress == 10
+    assert snapshot.response_shape == "task=['data', 'progress', 'status', 'task_id']; data=[]; result=NoneType"
+    await http_client.aclose()
+
+
+@pytest.mark.asyncio
+async def test_query_accepts_task_wrapped_by_top_level_data() -> None:
+    async def handler(request: httpx.Request) -> httpx.Response:
+        del request
+        return httpx.Response(
+            200,
+            json={
+                "code": 200,
+                "data": {
+                    "task_id": "task-wrapped",
+                    "status": "completed",
+                    "progress": 100,
+                    "result": {
+                        "music": [
+                            {
+                                "audio_id": "audio-wrapped",
+                                "title": "已生成歌曲",
+                                "audio_url": "https://files.example/wrapped.mp3",
+                            }
+                        ]
+                    },
+                },
+            },
+        )
+
+    http_client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    client = ApiMartClient(base_url="https://api.example", api_key="secret", client=http_client)
+
+    snapshot = await client.get_task("task-wrapped")
+
+    assert snapshot.status == "completed"
+    assert snapshot.tracks[0].audio_id == "audio-wrapped"
+    assert "result=object:['music']" in snapshot.response_shape
     await http_client.aclose()

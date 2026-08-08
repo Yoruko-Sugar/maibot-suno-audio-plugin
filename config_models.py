@@ -18,7 +18,7 @@ class PluginSectionConfig(PluginConfigBase):
         json_schema_extra={"label": "启用插件", "order": 1},
     )
     config_version: str = Field(
-        default="0.1.3",
+        default="0.1.4",
         description="配置文件版本。",
         json_schema_extra={"label": "配置版本", "disabled": True, "order": 2},
     )
@@ -105,6 +105,13 @@ class ApiMartConfig(PluginConfigBase):
         le=20,
         description="连续查询失败后停止自动跟踪的阈值。",
         json_schema_extra={"label": "查询失败阈值", "order": 14},
+    )
+    completed_result_grace_seconds: int = Field(
+        default=90,
+        ge=15,
+        le=600,
+        description="供应商先返回 completed、但结果尚未同步时继续等待的时间。",
+        json_schema_extra={"label": "完成结果宽限（秒）", "order": 15},
     )
 
 

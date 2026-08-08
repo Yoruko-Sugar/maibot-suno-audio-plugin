@@ -383,7 +383,11 @@ class AudioRepository:
                    OR (
                        status = 'tracking_error'
                        AND error_type = 'protocol_error'
-                       AND error_message = '未知供应商任务状态：processing'
+                       AND error_message IN (
+                           '未知供应商任务状态：processing',
+                           '音频任务完成但结果中没有 music[]',
+                           '歌词任务完成但结果中没有歌词文本'
+                       )
                    )
                 ORDER BY created_at
                 """

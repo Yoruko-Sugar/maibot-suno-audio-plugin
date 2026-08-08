@@ -408,6 +408,7 @@ await ctx.send.custom(
 | `apimart.generation_timeout_seconds` | int | `600` | 单个任务最长跟踪时间 |
 | `apimart.poll_interval_seconds` | int | `4` | 轮询间隔，限制在 3–10 秒 |
 | `apimart.max_poll_errors` | int | `5` | 连续查询失败阈值 |
+| `apimart.completed_result_grace_seconds` | int | `90` | completed 状态先于结果同步时的继续等待时间 |
 
 `api_key` 在 WebUI 中使用密码输入框，配置 Schema 设置 `input_type=password`。日志中任何请求头必须先脱敏。
 
@@ -592,6 +593,7 @@ stateDiagram-v2
 - 供应商 `429`：读取 `Retry-After`；没有该响应头时使用 5、10、20、30 秒退避。
 - 查询连接错误或 `5xx`：5、10、20、30 秒退避，连续失败达到阈值后标记 `tracking_timeout`，不改成供应商失败。
 - 超过 `generation_timeout_seconds`：停止自动轮询，保留 `vendor_task_id`，管理员可执行“重查”。
+- 若供应商已返回 `completed` 但结果数组尚未出现，则在 `completed_result_grace_seconds` 内继续轮询；超过宽限后保留任务和响应字段结构供诊断，不重新提交。
 - 日志只在状态或进度档位变化时输出，避免每 4 秒刷屏。
 
 ## 9. 数据模型

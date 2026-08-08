@@ -79,24 +79,38 @@ def test_completed_tracks_survive_repository_reopen(tmp_path: Path) -> None:
     reopened.close()
 
 
-def test_processing_protocol_error_is_resumable_after_upgrade(tmp_path: Path) -> None:
+def test_known_vendor_protocol_errors_are_resumable_after_upgrade(tmp_path: Path) -> None:
     repository = AudioRepository(tmp_path / "audio.sqlite3")
-    job, _ = repository.create_job(
+    processing_job, _ = repository.create_job(
         request=make_request(),
         platform="qq",
         stream_id="stream-1",
         group_id="group-1",
         requester_id="user-1",
     )
-    repository.mark_submitted(str(job["id"]), "task-processing")
+    repository.mark_submitted(str(processing_job["id"]), "task-processing")
     repository.mark_failed(
-        str(job["id"]),
+        str(processing_job["id"]),
         status="tracking_error",
         error_type="protocol_error",
         error_message="未知供应商任务状态：processing",
     )
+    missing_result_job, _ = repository.create_job(
+        request=make_request("第二个任务"),
+        platform="qq",
+        stream_id="stream-2",
+        group_id="group-2",
+        requester_id="user-2",
+    )
+    repository.mark_submitted(str(missing_result_job["id"]), "task-missing-result")
+    repository.mark_failed(
+        str(missing_result_job["id"]),
+        status="tracking_error",
+        error_type="protocol_error",
+        error_message="音频任务完成但结果中没有 music[]",
+    )
 
     resumable = repository.list_resumable_jobs()
 
-    assert [item["id"] for item in resumable] == [job["id"]]
+    assert {item["id"] for item in resumable} == {processing_job["id"], missing_result_job["id"]}
     repository.close()

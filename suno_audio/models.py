@@ -217,3 +217,4 @@ class VendorTaskSnapshot:
     lyrics_text: str = ""
     error_message: str = ""
     raw_result: Dict[str, Any] = field(default_factory=dict)
+    response_shape: str = ""
