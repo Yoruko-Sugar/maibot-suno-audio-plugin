@@ -9,10 +9,10 @@
   },
   "license": "AGPL-3.0-or-later",
   "urls": {
-    "repository": "",
-    "homepage": "",
-    "documentation": "",
-    "issues": ""
+    "repository": "https://github.com/Yoruko-Sugar/maibot-suno-audio-plugin",
+    "homepage": "https://github.com/Yoruko-Sugar/maibot-suno-audio-plugin",
+    "documentation": "https://github.com/Yoruko-Sugar/maibot-suno-audio-plugin#readme",
+    "issues": "https://github.com/Yoruko-Sugar/maibot-suno-audio-plugin/issues"
   },
   "changelog": "CHANGELOG.md",
   "host_application": {
