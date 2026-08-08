@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from base64 import b64encode
 from pathlib import PurePosixPath
-from typing import Any, Dict, Iterable
+from typing import Any, Dict, List
 from urllib.parse import urlparse
 import mimetypes
 import re
@@ -51,9 +51,12 @@ class DeliveryService:
                     raise RuntimeError("歌词任务已完成，但供应商结果中没有歌词文本")
                 await self._send_lyrics(target_stream, str(job["short_id"]), lyrics)
             else:
-                selected_tracks: Iterable[Dict[str, Any]] = tracks
+                selected_tracks: List[Dict[str, Any]] = tracks
                 if not self.plugin.config.delivery.auto_send_all_tracks and audio_index is None:
                     selected_tracks = tracks[:1]
+                report = self._build_track_report(job, selected_tracks)
+                if not send_succeeded(await self.plugin.ctx.send.text(report, target_stream)):
+                    raise RuntimeError("音频结果信息发送失败")
                 for track in selected_tracks:
                     await self._deliver_track(job, track, target_stream)
             self.repository.set_delivery_status(str(job["id"]), "delivered")
@@ -63,18 +66,6 @@ class DeliveryService:
 
     async def _deliver_track(self, job: Dict[str, Any], track: Dict[str, Any], stream_id: str) -> None:
         index = int(track["audio_index"])
-        title = str(track.get("title") or f"音频结果 {index}")
-        duration = self._format_duration(track.get("duration_seconds"))
-        info = (
-            "✅ 音频生成完成\n"
-            f"任务：{job['short_id']}\n"
-            f"结果：{index}《{title}》\n"
-            f"时长：{duration}\n"
-            f"风格：{track.get('tags') or '未返回'}"
-        )
-        if not send_succeeded(await self.plugin.ctx.send.text(info, stream_id)):
-            raise RuntimeError("音频结果信息发送失败")
-
         image_url = str(track.get("image_large_url") or track.get("image_url") or "")
         if self.plugin.config.delivery.send_cover and image_url:
             image_bytes, _ = await self.client.download(
@@ -111,7 +102,28 @@ class DeliveryService:
 
         lyrics = str(track.get("lyrics") or "").strip()
         if self.plugin.config.delivery.send_lyrics and lyrics:
-            await self._send_lyrics(stream_id, f"{job['short_id']}｜{index}", lyrics)
+            lyrics_title = str(track.get("title") or "未命名歌曲").strip()
+            await self._send_lyrics(stream_id, f"《{lyrics_title}》", lyrics)
+
+    @staticmethod
+    def _build_track_report(job: Dict[str, Any], tracks: List[Dict[str, Any]]) -> str:
+        """为同一任务的全部候选音轨生成一条简洁报告。"""
+
+        operation = str(job["operation"])
+        label = {"instrumental": "音乐名", "sound": "音效名"}.get(operation, "歌名")
+        default_title = {"instrumental": "未命名音乐", "sound": "未命名音效"}.get(operation, "未命名歌曲")
+        titles = DeliveryService._unique_non_empty(
+            [str(track.get("title") or default_title).strip() for track in tracks]
+        )
+        styles = DeliveryService._unique_non_empty([str(track.get("tags") or "").strip() for track in tracks])
+        lines = ["✅ 音频生成完成", f"{label}：{'、'.join(f'《{title}》' for title in titles)}"]
+        if styles:
+            lines.append(f"风格：{'；'.join(styles)}")
+        return "\n".join(lines)
+
+    @staticmethod
+    def _unique_non_empty(values: List[str]) -> List[str]:
+        return list(dict.fromkeys(value for value in values if value))
 
     async def _send_audio(self, track: Dict[str, Any], stream_id: str, mode: str) -> None:
         audio_url = str(track.get("audio_url") or "").strip()
@@ -177,10 +189,3 @@ class DeliveryService:
         safe_title = INVALID_FILENAME_CHARS.sub("_", title).strip(" ._")[:80] or "audio"
         mime_type = mimetypes.guess_type(f"x{suffix}")[0] or "audio/mpeg"
         return f"{safe_title}_{track['audio_index']}{suffix}", mime_type
-
-    @staticmethod
-    def _format_duration(duration: Any) -> str:
-        if not isinstance(duration, (int, float)):
-            return "未返回"
-        seconds = max(0, int(duration))
-        return f"{seconds // 60:02d}:{seconds % 60:02d}"
