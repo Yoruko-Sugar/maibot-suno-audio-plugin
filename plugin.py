@@ -184,15 +184,22 @@ class SunoAudioPlugin(MaiBotPlugin):
         if not isinstance(sections, dict):
             return schema
         section = sections.get("prompt_optimizer")
-        if not isinstance(section, dict):
-            return schema
-        fields = section.get("fields")
-        if not isinstance(fields, dict):
-            return schema
-        field = fields.get("llm_task_name")
-        if isinstance(field, dict):
-            field["ui_type"] = "select"
-            field["choices"] = list(self._available_model_tasks)
+        if isinstance(section, dict):
+            fields = section.get("fields")
+            if isinstance(fields, dict):
+                field = fields.get("llm_task_name")
+                if isinstance(field, dict):
+                    field["ui_type"] = "select"
+                    field["choices"] = list(self._available_model_tasks)
+
+        generation_section = sections.get("generation")
+        if isinstance(generation_section, dict):
+            generation_fields = generation_section.get("fields")
+            if isinstance(generation_fields, dict):
+                vocal_gender_field = generation_fields.get("vocal_gender")
+                if isinstance(vocal_gender_field, dict):
+                    vocal_gender_field["ui_type"] = "select"
+                    vocal_gender_field["choices"] = ["auto", "Male", "Female"]
         return schema
 
     @Command(
@@ -266,6 +273,8 @@ class SunoAudioPlugin(MaiBotPlugin):
         description = str(kwargs.get("description") or "").strip()
         config = self.config
         bpm_value = kwargs.get("bpm")
+        configured_gender = str(config.generation.vocal_gender)
+        vocal_gender = "" if configured_gender in {"", "auto"} else configured_gender
         request = GenerationRequest(
             operation=operation,
             original_prompt=description,
@@ -280,7 +289,7 @@ class SunoAudioPlugin(MaiBotPlugin):
             lyrics=str(kwargs.get("lyrics") or ""),
             negative_tags=str(config.generation.negative_tags),
             instrumental=operation == AudioOperation.INSTRUMENTAL,
-            vocal_gender=str(config.generation.vocal_gender),
+            vocal_gender=vocal_gender,
             style_weight=float(config.generation.style_weight),
             weirdness_constraint=float(config.generation.weirdness_constraint),
             audio_weight=float(config.generation.audio_weight),

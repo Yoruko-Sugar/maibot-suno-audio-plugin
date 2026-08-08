@@ -1,6 +1,6 @@
 [plugin]
 enabled = true
-config_version = "0.1.0"
+config_version = "0.1.1"
 allow_private_chat = true
 allow_group_chat = true
 
@@ -28,7 +28,7 @@ optimize_command_prompts = true
 preserve_user_lyrics = true
 
 [generation]
-vocal_gender = ""
+vocal_gender = "auto"
 style_weight = 0.6
 weirdness_constraint = 0.3
 audio_weight = 0.5

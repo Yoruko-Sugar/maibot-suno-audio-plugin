@@ -18,7 +18,7 @@ class PluginSectionConfig(PluginConfigBase):
         json_schema_extra={"label": "启用插件", "order": 1},
     )
     config_version: str = Field(
-        default="0.1.0",
+        default="0.1.1",
         description="配置文件版本。",
         json_schema_extra={"label": "配置版本", "disabled": True, "order": 2},
     )
@@ -179,10 +179,15 @@ class GenerationConfig(PluginConfigBase):
     __ui_icon__: ClassVar[str] = "sliders"
     __ui_order__: ClassVar[int] = 3
 
-    vocal_gender: Literal["", "Male", "Female"] = Field(
-        default="",
-        description="默认人声性别；留空不指定。",
-        json_schema_extra={"label": "默认人声性别", "ui_type": "select", "order": 1},
+    vocal_gender: str = Field(
+        default="auto",
+        description="默认人声性别；auto 表示不指定。旧配置中的空字符串仍兼容读取。",
+        json_schema_extra={
+            "label": "默认人声性别",
+            "ui_type": "select",
+            "choices": ["auto", "Male", "Female"],
+            "order": 1,
+        },
     )
     style_weight: float = Field(
         default=0.6,

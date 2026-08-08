@@ -173,13 +173,15 @@ class AudioCommandRouter:
     def _base_request(self, operation: AudioOperation, prompt: str) -> GenerationRequest:
         config = self.plugin.config
         lyrics_model = "" if str(config.apimart.lyrics_model) == "default" else str(config.apimart.lyrics_model)
+        configured_gender = str(config.generation.vocal_gender)
+        vocal_gender = "" if configured_gender in {"", "auto"} else configured_gender
         return GenerationRequest(
             operation=operation,
             original_prompt=prompt,
             prompt=prompt,
             version=str(config.apimart.default_version),
             negative_tags=str(config.generation.negative_tags),
-            vocal_gender=str(config.generation.vocal_gender),
+            vocal_gender=vocal_gender,
             style_weight=float(config.generation.style_weight),
             weirdness_constraint=float(config.generation.weirdness_constraint),
             audio_weight=float(config.generation.audio_weight),
