@@ -1,0 +1,61 @@
+[plugin]
+enabled = true
+config_version = "0.1.0"
+allow_private_chat = true
+allow_group_chat = true
+
+[apimart]
+base_url = "https://api.apimart.ai"
+api_key = ""
+model = "suno"
+default_version = "v5.5"
+lyrics_model = "default"
+connect_timeout_seconds = 10
+request_timeout_seconds = 30
+generation_timeout_seconds = 600
+poll_interval_seconds = 4
+max_poll_errors = 5
+
+[prompt_optimizer]
+semantic_tool_enabled = true
+prompt_optimizer_enabled = true
+llm_task_name = "utils"
+temperature = 0.3
+max_tokens = 4096
+llm_timeout_seconds = 90
+failure_mode = "abort"
+optimize_command_prompts = true
+preserve_user_lyrics = true
+
+[generation]
+vocal_gender = ""
+style_weight = 0.6
+weirdness_constraint = 0.3
+audio_weight = 0.5
+auto_lyrics = false
+negative_tags = ""
+sound_version = "v5.5"
+
+[permissions]
+access_mode = "public"
+global_admin_ids = []
+user_whitelist = []
+group_whitelist = []
+
+[limits]
+max_concurrent_jobs = 2
+max_active_jobs_per_stream = 1
+user_cooldown_seconds = 30
+daily_jobs_per_user = 10
+max_prompt_chars = 3000
+max_lyrics_chars = 12000
+
+[delivery]
+music_mode = "file_url"
+sound_mode = "file_url"
+auto_send_all_tracks = true
+send_cover = true
+send_lyrics = true
+base64_max_bytes = 10485760
+download_timeout_seconds = 120
+forward_segment_chars = 1800

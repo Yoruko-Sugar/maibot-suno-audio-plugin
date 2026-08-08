@@ -1,0 +1,41 @@
+{
+  "manifest_version": 2,
+  "version": "0.1.0",
+  "name": "Suno 音频工坊",
+  "description": "基于 API Mart Suno 的智能音乐、歌词与音效生成插件，支持自然语言触发、提示词优化、异步任务恢复和结果重发。",
+  "author": {
+    "name": "Yoruko",
+    "url": "https://github.com/Yoruko-Sugar"
+  },
+  "license": "AGPL-3.0-or-later",
+  "urls": {
+    "repository": "",
+    "homepage": "",
+    "documentation": "",
+    "issues": ""
+  },
+  "changelog": "CHANGELOG.md",
+  "host_application": {
+    "min_version": "1.1.4",
+    "max_version": "1.99.99"
+  },
+  "sdk": {
+    "min_version": "2.7.1",
+    "max_version": "2.99.99"
+  },
+  "dependencies": [],
+  "capabilities": [
+    "llm.generate",
+    "llm.get_available_models",
+    "message.get_by_id",
+    "send.custom",
+    "send.forward",
+    "send.image",
+    "send.text"
+  ],
+  "i18n": {
+    "default_locale": "zh-CN",
+    "supported_locales": ["zh-CN"]
+  },
+  "id": "maibot-community.suno-audio-plugin"
+}
