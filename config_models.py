@@ -18,7 +18,7 @@ class PluginSectionConfig(PluginConfigBase):
         json_schema_extra={"label": "启用插件", "order": 1},
     )
     config_version: str = Field(
-        default="0.1.1",
+        default="0.1.2",
         description="配置文件版本。",
         json_schema_extra={"label": "配置版本", "disabled": True, "order": 2},
     )
@@ -314,9 +314,9 @@ class DeliveryConfig(PluginConfigBase):
     __ui_icon__: ClassVar[str] = "send"
     __ui_order__: ClassVar[int] = 6
 
-    music_mode: Literal["file_url", "file_base64"] = Field(
+    music_mode: Literal["file_url", "file_base64", "voice"] = Field(
         default="file_url",
-        description="完整音乐发送模式。",
+        description="完整音乐发送模式；voice 会将生成结果作为语音消息发送。",
         json_schema_extra={"label": "音乐发送模式", "ui_type": "select", "order": 1},
     )
     sound_mode: Literal["file_url", "file_base64", "voice"] = Field(

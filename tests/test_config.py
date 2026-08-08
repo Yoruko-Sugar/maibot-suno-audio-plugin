@@ -47,3 +47,6 @@ def test_final_webui_schema_injects_non_empty_select_choices() -> None:
     assert field["ui_type"] == "select"
     assert field["choices"] == ["auto", "Male", "Female"]
     assert "" not in field["choices"]
+
+    music_mode = schema["sections"]["delivery"]["fields"]["music_mode"]
+    assert music_mode["choices"] == ["file_url", "file_base64", "voice"]
